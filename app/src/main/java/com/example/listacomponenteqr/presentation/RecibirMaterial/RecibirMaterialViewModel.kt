@@ -37,27 +37,6 @@ class RecibirMaterialViewModel @Inject constructor(
     val granel = mutableStateOf("")
     val listRecibirMat =  mutableStateListOf<RecibirMat>()
 
-    val pruebalista = mutableStateListOf<Prueba>()
-
-    /*fun getPrueba()/*: SnapshotStateList<Prueba>*/ {
-        //var pruebalista = mutableStateListOf<Prueba>()
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-
-                val authService = RetrofitHelper.getAuthService()
-                val responseService = authService.apiprueba()
-                if(responseService.isSuccessful){
-                    if(pruebalista.isEmpty()){
-                        pruebalista += responseService.body()!!
-                    }
-                }
-            }catch (e:Exception){
-                error(e)
-            }
-        }
-        /*return pruebalista*/
-    }*/
-
     fun getCS(string:String,context: Context) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
@@ -72,12 +51,6 @@ class RecibirMaterialViewModel @Inject constructor(
                 if(vali.getValidationName(string)){
                     codigo += responseService.refacciones.filter { it.nombre!!.uppercase().contains(string.toUpperCase()) /*|| it.nombre!!.lowercase().contains(string.toLowerCase()) || it.nombre!!.contains(string)*/}.asReversed() //.take(5)
                 }
-                /*if(vali.getValidationRefaccion(string) || vali.getValidationRefaccion2(string)) {
-                    codigo += responseService.refacciones.filter { it.codigo!!.contains(string.toUpperCase()) || it.codigo!!.contains(string.toLowerCase()) }.asReversed()
-                }
-                if(vali.getValidationName(string)){
-                    codigo += responseService.refacciones.filter { it.nombre!!.uppercase().contains(string.toUpperCase()) || it.nombre!!.lowercase().contains(string.toLowerCase()) || it.nombre!!.contains(string)}.asReversed()
-                }*/
                 progressBar.value =false
             } catch (e: Exception) {
                 error(e.toString())
