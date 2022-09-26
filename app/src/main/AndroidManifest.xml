@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.listacomponenteqr" >
+
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <application
+        android:name=".MaquinaApplication"
+        android:usesCleartextTraffic="true"
+        android:allowBackup="true"
+        android:icon="@drawable/qr"
+        android:screenOrientation="portrait"
+        android:label="@string/app_name"
+        android:roundIcon="@drawable/logo_qr"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.ListaComponenteQR" >
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:theme="@style/Theme.ListaComponenteQR"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>
