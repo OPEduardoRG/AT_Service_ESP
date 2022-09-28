@@ -195,9 +195,6 @@ fun ListMaquinas(
     val inputSala = rememberSaveable() { mutableStateOf("") }
     val inputSalaID = rememberSaveable() { mutableStateOf("") }
     val context = LocalContext.current
-    var bol = rememberSaveable {
-        mutableStateOf(false)
-    }
     val index = rememberSaveable() {
         mutableStateOf(0)
     }
@@ -407,6 +404,9 @@ fun ListMaquinas(
 
             }
             itemsIndexed(maquinasSala) { index, item ->
+                var bol = rememberSaveable {
+                    mutableStateOf(false)
+                }
                 Card(
                     modifier = Modifier
                         .padding(5.dp)
@@ -450,7 +450,6 @@ fun ListMaquinas(
                     }
                 }
             }
-
         }
     }
 }
@@ -464,7 +463,6 @@ fun PopupWindowDialog(x1: MutableState<Boolean>, item: MaquinasSala) {
         alignment = Alignment.TopCenter,
         properties = PopupProperties(),
         ) {
-
         Column(
             Modifier
                 .padding(top = 5.dp)
@@ -494,14 +492,12 @@ fun PopupWindowDialog(x1: MutableState<Boolean>, item: MaquinasSala) {
                         .align(Alignment.Center)
                         .padding(top = 70.dp))
             }
-
-
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(horizontal = 10.dp)
                     .verticalScroll(rememberScrollState()),
-                horizontalAlignment = Alignment.CenterHorizontally,
+                horizontalAlignment = CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
                 item.componentes.forEachIndexed() { ind, it ->
@@ -512,7 +508,6 @@ fun PopupWindowDialog(x1: MutableState<Boolean>, item: MaquinasSala) {
                             id = R.color.blackdark
                         )
                     ) {
-                        val indexx = ind + 1
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Filled.List, contentDescription = "", modifier = Modifier.padding(start = 10.dp))
                             Column() {
@@ -530,7 +525,6 @@ fun PopupWindowDialog(x1: MutableState<Boolean>, item: MaquinasSala) {
                                 )
                             }
                         }
-
                     }
                 }
             }
