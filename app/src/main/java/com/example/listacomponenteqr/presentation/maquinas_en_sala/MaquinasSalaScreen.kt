@@ -1,8 +1,12 @@
 package com.example.listacomponenteqr.presentation.maquinas_en_sala
 
+import android.annotation.SuppressLint
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.*
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -11,14 +15,8 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddLocationAlt
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.List
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.material.icons.filled.*
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
@@ -28,9 +26,13 @@ import androidx.compose.ui.Alignment.Companion.CenterStart
 import androidx.compose.ui.Alignment.Companion.End
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.modifier.modifierLocalConsumer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
@@ -49,104 +51,27 @@ import com.example.listacomponenteqr.ui.theme.blacktransp
 import com.example.listacomponenteqr.ui.theme.graydark
 import com.example.listacomponenteqr.ui.theme.reds
 
+//---------------------NavContoller-----------------------------------------------------------------
 @Composable
 fun MaquinasSalaScreen(
     navController: NavController,
     viewModel: MaquinasSalaViewModel = hiltViewModel()
 ) {
-    val regionesEspana = rememberSaveable {
-        listOf<RegionesEsp>(
-            RegionesEsp("30", "Alava"),
-            RegionesEsp("36", "Albacete"),
-            RegionesEsp("7", "Alicante"),
-            RegionesEsp("5", "Almeria"),
-            RegionesEsp("37", "Asturias"),
-            RegionesEsp("12", "Avila"),
-            RegionesEsp("13", "Badajoz"),
-            RegionesEsp("31", "Baleares"),
-            RegionesEsp("40", "Barcelona"),
-            RegionesEsp("1", "Burgos"),
-            RegionesEsp("17", "Caceres"),
-            RegionesEsp("19", "Cadiz"),
-            RegionesEsp("34", "Cantabria"),
-            RegionesEsp("51", "Castellon"),
-            RegionesEsp("52", "Ceuta"),
-            RegionesEsp("46", "Ciudad Real"),
-            RegionesEsp("15", "Cordoba"),
-            RegionesEsp("44", "Cuenca"),
-            RegionesEsp("50", "Gerona"),
-            RegionesEsp("18", "Granada"),
-            RegionesEsp("28", "Guadalajara"),
-            RegionesEsp("32", "Guipuzcoa"),
-            RegionesEsp("33", "Huelva"),
-            RegionesEsp("27", "Huesca"),
-            RegionesEsp("14", "Jaen"),
-            RegionesEsp("38", "La Coruña"),
-            RegionesEsp("21", "Las Palmas"),
-            RegionesEsp("43", "Leon"),
-            RegionesEsp("41", "Lerida"),
-            RegionesEsp("35", "Logroño"),
-            RegionesEsp("53", "Lugo"),
-            RegionesEsp("6", "Madrid"),
-            RegionesEsp("2", "Malaga"),
-            RegionesEsp("42", "Melilla"),
-            RegionesEsp("3", "Murcia"),
-            RegionesEsp("23", "Navarra"),
-            RegionesEsp("29", "no-region-0004"),
-            RegionesEsp("49", "Orense"),
-            RegionesEsp("4", "Palencia"),
-            RegionesEsp("39", "Pontevedra"),
-            RegionesEsp("16", "Salamanca"),
-            RegionesEsp("24", "Santa Cruz Tenerife"),
-            RegionesEsp("22", "Segovia"),
-            RegionesEsp("20", "Sevilla"),
-            RegionesEsp("45", "Soria"),
-            RegionesEsp("8", "Tarragona"),
-            RegionesEsp("26", "Teruel"),
-            RegionesEsp("48", "Toledo"),
-            RegionesEsp("11", "Valencia"),
-            RegionesEsp("9", "Valladolid"),
-            RegionesEsp("10", "Vizcaya"),
-            RegionesEsp("47", "Zamora"),
-            RegionesEsp("25", "Zaragoza"),
-        )
+    var region = when(viewModel.getListSimilar.size){
+        0 -> viewModel.regionesEspana
+        else -> viewModel.getListSimilar
     }
     Scaffold(
         topBar = {
             TopAppBarMaquinasSala(navController = navController)
         }
     ) {
-        ListMaquinas(viewModel.maquinasSala, viewModel, regionesEspana)
+        ListMaquinas(viewModel.maquinasSala, viewModel, region)
     }
 }
 
-@Composable
-private fun titleMaquinasSalas() {
-    Column(
-        modifier = Modifier
-            .padding(0.dp, 0.dp, 0.dp, 5.dp)
-            .clip(RoundedCornerShape(10.dp))
-            .background(blackdark)
-            .fillMaxWidth()
-            .padding(5.dp),
-    )
-    {
-        Image(
-            painter = painterResource(R.drawable.nav_sala_icon),
-            contentDescription = "",
-            modifier = Modifier
-                .padding(0.dp)
-                .size(50.dp)
-                .align(CenterHorizontally)
-        )
-        Text(
-            text = "MAQUINAS EN SALA",
-            style = MaterialTheme.typography.subtitle2,
-            modifier = Modifier.align(Alignment.CenterHorizontally)
-        )
-    }
-}
-
+//--------------------------------------------------------------------------------------------------
+//------------------------ ToolBar App--------------------------------------------------------------
 @Composable
 private fun TopAppBarMaquinasSala(
     navController: NavController,
@@ -179,25 +104,72 @@ private fun TopAppBarMaquinasSala(
         backgroundColor = reds,
     )
 }
+//--------------------------------------------------------------------------------------------------
+//-----------------------Funcion para girar el button
 
+@Composable
+fun icon (
+    expanded : Boolean,
+):ImageVector{
+    val icon = if(expanded){
+        Icons.Filled.KeyboardArrowUp
+    }else{
+        Icons.Filled.KeyboardArrowDown
+    }
+    return icon
+}
+//---------------------------------Title on down ToolBar--------------------------------------------
+
+@Composable
+private fun titleMaquinasSalas() {
+    Column(
+        modifier = Modifier
+            .padding(0.dp, 0.dp, 0.dp, 5.dp)
+//            .clip(RoundedCornerShape(10.dp))
+            .background(blackdark)
+            .fillMaxWidth()
+            .padding(5.dp),
+    )
+    {
+        Row(
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        ) {
+            Image(
+                painter = painterResource(R.drawable.nav_sala_icon),
+                contentDescription = "",
+                modifier = Modifier
+                    .padding(0.dp)
+                    .size(50.dp)
+            )
+            Text(
+                text = "MAQUINAS EN SALA",
+                style = MaterialTheme.typography.subtitle2,
+                modifier = Modifier
+                    .align(Alignment.CenterVertically)
+                    .padding(start = 10.dp)
+            )
+        }
+
+    }
+}
+//--------------------------------------------------------------------------------------------------
+
+@SuppressLint("UnrememberedMutableState")
 @Composable
 fun ListMaquinas(
     maquinasSala: SnapshotStateList<MaquinasSala>,
     viewModel: MaquinasSalaViewModel,
     regionesEspana: List<RegionesEsp>,
 ) {
-    var idsala = remember {
-        mutableStateOf("")
-    }
+
+    var idsala = remember { mutableStateOf("") }
     val dropRegion = rememberSaveable { mutableStateOf(false) }
     val dropSala = rememberSaveable { mutableStateOf(false) }
     val inputRegion = rememberSaveable() { mutableStateOf("") }
     val inputSala = rememberSaveable() { mutableStateOf("") }
     val inputSalaID = rememberSaveable() { mutableStateOf("") }
     val context = LocalContext.current
-    val index = rememberSaveable() {
-        mutableStateOf(0)
-    }
+    val focusManager = LocalFocusManager.current
     Column(
         modifier = Modifier
             .padding(10.dp, 10.dp, 10.dp, 0.dp)
@@ -206,7 +178,6 @@ fun ListMaquinas(
     ) {
         LazyColumn(
             modifier = Modifier
-                //.padding(top = 10.dp)
                 .clip(RoundedCornerShape(10.dp))
                 .background(blacktransp)
         ) {
@@ -215,20 +186,26 @@ fun ListMaquinas(
             }
             item {
                 OutlinedTextField(
-                    enabled = false,
+                    enabled = true,
                     value = inputRegion.value,
                     onValueChange = {
+                        inputRegion.value = it
+                        viewModel.getValidarSimilarLista(context, it)
                     },
-                    keyboardOptions = KeyboardOptions.Default.copy(
-                        keyboardType = KeyboardType.Ascii,
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Text,
                         imeAction = ImeAction.Done
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 2.dp, horizontal = 10.dp)
-                        .clickable {
-                            dropRegion.value = !dropRegion.value
-                            dropSala.value = false
+                        .onFocusChanged { focusState ->
+                            if (focusState.isFocused) {
+                                dropRegion.value = true
+                            } else if (focusState.hasFocus) {
+                                dropRegion.value = false
+                                focusManager.clearFocus()
+                            }
                         },
                     label = { Text("Selecciona la región") },
                     trailingIcon = {
@@ -236,11 +213,12 @@ fun ListMaquinas(
                             dropRegion.value = !dropRegion.value
                             dropSala.value = false
                         }) {
-                            Icon(Icons.Filled.ExpandLess, "contentDescription")
+                            icon(dropRegion.value)
                         }
                     }
                 )
             }
+
             if (dropRegion.value) {
                 itemsIndexed(regionesEspana) { index, item ->
                     Card(
@@ -253,6 +231,7 @@ fun ListMaquinas(
                                 dropRegion.value = false
                                 viewModel.getSalas(item.regionidx.toString())
                                 inputSala.value = ""
+                                focusManager.clearFocus()
                             }
                     ) {
                         Row(
@@ -450,11 +429,11 @@ fun ListMaquinas(
                     }
                 }
             }
+
         }
     }
 }
 
-// on below line we are creating a pop up window dialog method
 @Composable
 fun PopupWindowDialog(x1: MutableState<Boolean>, item: MaquinasSala) {
     val openDialog = remember { mutableStateOf(false) }
@@ -462,7 +441,8 @@ fun PopupWindowDialog(x1: MutableState<Boolean>, item: MaquinasSala) {
     Popup(
         alignment = Alignment.TopCenter,
         properties = PopupProperties(),
-        ) {
+    ) {
+
         Column(
             Modifier
                 .padding(top = 5.dp)
@@ -474,24 +454,30 @@ fun PopupWindowDialog(x1: MutableState<Boolean>, item: MaquinasSala) {
                     .fillMaxWidth()
                     .background(reds)
             ) {
-                IconButton(onClick = { x1.value = false }, modifier = Modifier.align(CenterEnd) ) {
+                IconButton(onClick = { x1.value = false }, modifier = Modifier.align(CenterEnd)) {
                     Icon(
                         Icons.Filled.Close, contentDescription = "", modifier = Modifier.align(
                             CenterEnd
                         )
                     )
                 }
-                Text(text = "No. Serie: ${item.serie}", style = MaterialTheme.typography.h6,
+                Text(
+                    text = "No. Serie: ${item.serie}", style = MaterialTheme.typography.h6,
                     modifier = Modifier
                         .align(Alignment.Center)
-                        .padding(top = 30.dp))
+                        .padding(top = 30.dp)
+                )
 
-                Text(text = "Nombre: ${item.mueble}",
+                Text(
+                    text = "Nombre: ${item.mueble}",
                     style = MaterialTheme.typography.subtitle1,
                     modifier = Modifier
                         .align(Alignment.Center)
-                        .padding(top = 70.dp))
+                        .padding(top = 70.dp)
+                )
             }
+
+
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -508,23 +494,39 @@ fun PopupWindowDialog(x1: MutableState<Boolean>, item: MaquinasSala) {
                             id = R.color.blackdark
                         )
                     ) {
+                        val indexx = ind + 1
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Filled.List, contentDescription = "", modifier = Modifier.padding(start = 10.dp))
+                            Icon(
+                                Icons.Filled.List,
+                                contentDescription = "",
+                                modifier = Modifier.padding(start = 10.dp)
+                            )
                             Column() {
                                 Text(
                                     text = "Codigo: ${it.clave}",
                                     fontSize = 14.sp,
                                     color = Color.White,
-                                    modifier = Modifier.padding(start = 15.dp, top = 10.dp, end = 10.dp))
+                                    modifier = Modifier.padding(
+                                        start = 15.dp,
+                                        top = 10.dp,
+                                        end = 10.dp
+                                    )
+                                )
 
                                 Text(
                                     text = "Nombre: ${it.nombre}",
                                     fontSize = 14.sp,
                                     color = Color.White,
-                                    modifier = Modifier.padding(start = 15.dp, top = 3.dp, end = 10.dp, bottom = 10.dp)
+                                    modifier = Modifier.padding(
+                                        start = 15.dp,
+                                        top = 3.dp,
+                                        end = 10.dp,
+                                        bottom = 10.dp
+                                    )
                                 )
                             }
                         }
+
                     }
                 }
             }
