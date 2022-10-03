@@ -56,8 +56,10 @@ class LoginViewModel @Inject constructor() : ViewModel() {
                 if(e.toString()=="com.google.gson.JsonSyntaxException: java.lang.NumberFormatException: empty String"){
                     StringProgres.value = "Verifica usuario y contraseña."
                     Log.d("Logging", "Error Authentication"+ e.toString())
-                    progressBar.value = false
-                    Error.value = true
+                    progressBar.value =
+                        false
+                    Error.value =
+                        true
                     delay(5000)
                     Error.value = false
                 }else{
