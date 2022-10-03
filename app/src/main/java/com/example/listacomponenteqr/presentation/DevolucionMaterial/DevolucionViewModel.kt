@@ -41,10 +41,10 @@ class DevolucionViewModel @Inject constructor(
                 val responseService = authService.getCodigosSolicitud()
                 val vali = Utils(context)
                 if(vali.getValidationRefaccion(string) || vali.getValidationRefaccion2(string)) {
-                    codigo += responseService.refacciones.filter { it.codigo!!.uppercase().contains(string.toUpperCase()) /*|| it.codigo!!.contains(string.toLowerCase()) */}.asReversed()//.take(5)
+                    codigo += responseService.refacciones.filter { it.codigo!!.uppercase().contains(string.uppercase())}.asReversed()//.take(5)
                 }
                 if(vali.getValidationName(string)){
-                    codigo += responseService.refacciones.filter { it.nombre!!.uppercase().contains(string.toUpperCase()) /*|| it.nombre!!.lowercase().contains(string.toLowerCase()) || it.nombre!!.contains(string)*/}.asReversed() //.take(5)
+                    codigo += responseService.refacciones.filter { it.nombre!!.uppercase().contains(string.uppercase())}.asReversed() //.take(5)
                 }
                 progressBar.value =false
             } catch (e: Exception) {
@@ -57,13 +57,15 @@ class DevolucionViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             val dataStorePreferenceRepository = SharedPrefence(context)
             val usuid = dataStorePreferenceRepository.getUsuID()
+            val sala = dataStorePreferenceRepository.getSala()
             progressBar.value =true
             try {
                 val authService = RetrofitHelper.getAuthService()
                 val responseService = authService.solPedidoDevolucion(
                     DevSolicitudMaterial(
                         usuarioid = usuid.toString(),
-                        solicitud = solicitud
+                        solicitud = solicitud,
+                        sala = sala
                     )
                 )
                 if(responseService.isSuccessful){
