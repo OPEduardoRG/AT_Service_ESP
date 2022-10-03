@@ -15,6 +15,7 @@ class SharedPrefence(val context : Context?) {
     /**USER INFO LOGIN**/
     val PREF_USUID =        "user_id"
     val PREF_USU =          "user"
+    val PREF_SALA =         "sala"
     val PREF_DEPARTAMENT =  "departament"
     val PREF_SUB_CENTRO =   "sub_centro"
     val PREF_VERSION =      "version"
@@ -30,11 +31,12 @@ class SharedPrefence(val context : Context?) {
         editor.commit()
     }
 
-    fun saveUserInfo(user:String,pwd:String,userID:Int,nombre:String){
+    fun saveUserInfo(user: String, pwd: String, userID: Int, nombre: String, sala: String?){
         editor.putString(PREF_LOGIN_USER, user)
         editor.putString(PREF_LOGIN_PASS, pwd )
         editor.putInt(PREF_USUID, userID )
         editor.putString(PREF_USU, nombre)
+        editor.putString(PREF_SALA,sala)
         editor.commit()
     }
 
@@ -52,6 +54,8 @@ class SharedPrefence(val context : Context?) {
     fun getUsu(): String?{ return sharedPref.getString(PREF_USU, null)}
 
     fun getUsuID(): Int{ return sharedPref.getInt(PREF_USUID, 0)}
+
+    fun getSala(): String? { return sharedPref.getString(PREF_SALA,null)}
 
     fun getDepartament() : String?{ return sharedPref.getString(PREF_DEPARTAMENT, null)}
 

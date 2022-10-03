@@ -28,6 +28,7 @@ data class DevolucionPorEstatus(
 
 data class DevSolicitudMaterial (
     @SerializedName("usuarioid" ) var usuarioid : String?              = null,
+    @SerializedName("sala"      ) var sala      : String?              = null,
     @SerializedName("solicitud" ) var solicitud : ArrayList<Solicitud> = arrayListOf()
 )
 

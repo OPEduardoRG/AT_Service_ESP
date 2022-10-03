@@ -2,10 +2,7 @@ package com.example.listacomponenteqr
 
 import android.content.Context
 import android.util.Log
-import android.widget.Toast
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.platform.LocalContext
-import androidx.datastore.dataStore
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -34,35 +31,23 @@ class LoginViewModel @Inject constructor() : ViewModel() {
     val imageErrorAuth = mutableStateOf(value = false)
     val checkInicio = mutableStateOf(false)
     private val loginRequestLiveData = MutableLiveData<Boolean>()
-    val name = mutableStateOf("")
 
     fun login(usuariox: String, passx: String, context: Context) {
         viewModelScope.launch(Dispatchers.IO) {
             val dataStorePreferenceRepository = SharedPrefence(context)
             try {
                 progressBar.value = true
+                dataStorePreferenceRepository.clearSharedPreference()
                 val authService = RetrofitHelper.getAuthService()
                 val responseService = authService.getLogin(usuariox,passx)
-                Log.d("Loggging", "Response: $responseService")
-                dataStorePreferenceRepository.clearSharedPreference()
                 dataStorePreferenceRepository.saveinicio(checkInicio.value)
-                dataStorePreferenceRepository.saveUserInfo(usuariox,passx,responseService.body()!!.n!!.toInt(),responseService.body()!!.nombre.toString())
-                name.value = responseService.body()?.n.toString()
-                Log.d("Loggging", "ResponseEEEEEEEEEEEEEEE:" + responseService.body()?.nombre.toString())
-                if (responseService.isSuccessful) {
-                    delay(1500L)
-                    isSuccessLoading.value = true
-                    imageErrorAuth.value = true
-                    responseService.body()?.let { tokenDto ->
-                        Log.d("Logging", "Response TokenDto: ${tokenDto}")
-                        name.value = "${tokenDto.nombre}"
-                    }
-                } else {
-                    responseService.errorBody()?.let { error ->
-                        imageErrorAuth.value = true
+                if(responseService.code()==200&&responseService.body()!!.nombre!!.isNotBlank()){
+
+                    responseService.body()?.let { body ->
+                        dataStorePreferenceRepository.saveUserInfo(usuariox,passx,body.n!!.toInt(),body.nombre.toString(),body.sala)
                         delay(1500L)
-                        imageErrorAuth.value = false
-                        error.close()
+                        isSuccessLoading.value = true
+                        imageErrorAuth.value = true
                     }
                 }
                 loginRequestLiveData.postValue(responseService.isSuccessful)
