@@ -1,12 +1,12 @@
 package com.example.listacomponenteqr.presentation.maquinas_en_sala
 
 import android.annotation.SuppressLint
-import android.util.Log
-import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.*
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -22,15 +22,11 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.CenterEnd
 import androidx.compose.ui.Alignment.Companion.CenterHorizontally
-import androidx.compose.ui.Alignment.Companion.CenterStart
-import androidx.compose.ui.Alignment.Companion.End
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.modifier.modifierLocalConsumer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.colorResource
@@ -46,6 +42,7 @@ import androidx.navigation.NavController
 import com.example.listacomponenteqr.R
 import com.example.listacomponenteqr.data.remote.dto.MaquinasSala.MaquinasSala
 import com.example.listacomponenteqr.data.remote.dto.SolicitudRefaccion.RegionesEsp
+import com.example.listacomponenteqr.data.remote.dto.SolicitudRefaccion.Salas
 import com.example.listacomponenteqr.ui.theme.blackdark
 import com.example.listacomponenteqr.ui.theme.blacktransp
 import com.example.listacomponenteqr.ui.theme.graydark
@@ -57,16 +54,21 @@ fun MaquinasSalaScreen(
     navController: NavController,
     viewModel: MaquinasSalaViewModel = hiltViewModel()
 ) {
-    var region = when(viewModel.getListSimilar.size){
+    var region = when (viewModel.getListSimilar.size) {
         0 -> viewModel.regionesEspana
         else -> viewModel.getListSimilar
+    }
+
+    var salas = when (viewModel.getListSimilarSalas.size) {
+        0 -> viewModel.salasxRegion
+        else -> viewModel.getListSimilarSalas
     }
     Scaffold(
         topBar = {
             TopAppBarMaquinasSala(navController = navController)
         }
     ) {
-        ListMaquinas(viewModel.maquinasSala, viewModel, region)
+        ListMaquinas(viewModel.maquinasSala, viewModel, region, salas)
     }
 }
 
@@ -108,15 +110,22 @@ private fun TopAppBarMaquinasSala(
 //-----------------------Funcion para girar el button
 
 @Composable
-fun icon (
-    expanded : Boolean,
-):ImageVector{
-    val icon = if(expanded){
-        Icons.Filled.KeyboardArrowUp
-    }else{
-        Icons.Filled.KeyboardArrowDown
-    }
-    return icon
+fun CardArrow(
+    degrees: Float,
+    onClick: () -> Unit
+) {
+    IconButton(
+        onClick = onClick,
+        content = {
+            Icon(
+                Icons.Filled.ArrowDropDown,
+                contentDescription = "",
+                modifier = Modifier
+                    .rotate(degrees)
+                    .size(30.dp)
+            )
+        }
+    )
 }
 //---------------------------------Title on down ToolBar--------------------------------------------
 
@@ -154,12 +163,13 @@ private fun titleMaquinasSalas() {
 }
 //--------------------------------------------------------------------------------------------------
 
-@SuppressLint("UnrememberedMutableState")
+@SuppressLint("UnrememberedMutableState", "UnusedTransitionTargetStateParameter")
 @Composable
 fun ListMaquinas(
     maquinasSala: SnapshotStateList<MaquinasSala>,
     viewModel: MaquinasSalaViewModel,
     regionesEspana: List<RegionesEsp>,
+    salas: SnapshotStateList<Salas>,
 ) {
 
     var idsala = remember { mutableStateOf("") }
@@ -170,6 +180,10 @@ fun ListMaquinas(
     val inputSalaID = rememberSaveable() { mutableStateOf("") }
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
+    var expand_List = rememberSaveable() {
+        mutableStateOf(true)
+    }
+
     Column(
         modifier = Modifier
             .padding(10.dp, 10.dp, 10.dp, 0.dp)
@@ -185,6 +199,19 @@ fun ListMaquinas(
                 titleMaquinasSalas()
             }
             item {
+                val transitionState = remember {
+                    MutableTransitionState(dropRegion.value).apply {
+                        targetState = !dropRegion.value
+                    }
+                }
+                val transition =
+                    updateTransition(targetState = transitionState, label = "transition")
+                val arrowRotationDegree by transition.animateFloat({
+                    tween(durationMillis = 300)
+                }, label = "rotationDegreeTransition") {
+                    if (dropRegion.value) 0f else 180f
+                }
+//----------------------------------------------------------------------------------------------------------------
                 OutlinedTextField(
                     enabled = true,
                     value = inputRegion.value,
@@ -209,12 +236,12 @@ fun ListMaquinas(
                         },
                     label = { Text("Selecciona la región") },
                     trailingIcon = {
-                        IconButton(onClick = {
-                            dropRegion.value = !dropRegion.value
-                            dropSala.value = false
-                        }) {
-                            icon(dropRegion.value)
-                        }
+                        CardArrow(
+                            arrowRotationDegree,
+                            { dropRegion.value = !dropRegion.value }
+                        )
+
+
                     }
                 )
             }
@@ -232,6 +259,9 @@ fun ListMaquinas(
                                 viewModel.getSalas(item.regionidx.toString())
                                 inputSala.value = ""
                                 focusManager.clearFocus()
+                                viewModel.maquinasSala.clear()
+                                inputSala.value = ""
+                                viewModel.getListSimilarSalas.clear()
                             }
                     ) {
                         Row(
@@ -259,14 +289,29 @@ fun ListMaquinas(
                     }
                 }
             }
+//--------------------------------------------------------------------------------------------------------------
             item {
+                val transitionState = remember {
+                    MutableTransitionState(dropSala.value).apply {
+                        targetState = !dropSala.value
+                    }
+                }
+                val transition =
+                    updateTransition(targetState = transitionState, label = "transition")
+                val arrowRotationDegree by transition.animateFloat({
+                    tween(durationMillis = 300)
+                }, label = "rotationDegreeTransition") {
+                    if (dropSala.value) 0f else 180f
+                }
                 OutlinedTextField(
-                    enabled = false,
+                    enabled = inputRegion.value.isNotBlank(),
                     value = inputSala.value,
                     onValueChange = {
+                        inputSala.value = it
+                        viewModel.getSimilarSala(context, inputSala.value)
                     },
-                    keyboardOptions = KeyboardOptions.Default.copy(
-                        keyboardType = KeyboardType.Ascii,
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Text,
                         imeAction = ImeAction.Done
                     ),
                     modifier = Modifier
@@ -275,15 +320,21 @@ fun ListMaquinas(
                         .clickable {
                             dropSala.value = !dropSala.value
                             dropRegion.value = false
+                        }
+                        .onFocusChanged { focusState ->
+                            if (focusState.isFocused) {
+                                dropSala.value = true
+                            } else if (focusState.hasFocus) {
+                                dropSala.value = false
+                                focusManager.clearFocus()
+                            }
                         },
                     label = { Text("Selecciona la sala") },
                     trailingIcon = {
-                        IconButton(onClick = {
-                            dropSala.value = !dropSala.value
-                            dropRegion.value = false
-                        }) {
-                            Icon(Icons.Filled.ExpandLess, "contentDescription")
-                        }
+                        CardArrow(
+                            arrowRotationDegree,
+                            { dropSala.value = !dropSala.value }
+                        )
                     }
                 )
             }
@@ -311,7 +362,7 @@ fun ListMaquinas(
                 }
             }
             if (dropSala.value) {
-                itemsIndexed(viewModel.salasxRegion) { idex, item ->
+               itemsIndexed(salas) { idex, item ->
                     Card(
                         Modifier
                             .padding(horizontal = 10.dp, vertical = 3.dp)
@@ -323,6 +374,7 @@ fun ListMaquinas(
                                 inputSalaID.value = item.salaid.toString()
                                 viewModel.getMaquinasSala(item.salaid!!.toInt())
                                 dropSala.value = false
+                                viewModel.getListSimilarSalas.clear()
                             }
                     ) {
                         Row(
@@ -350,186 +402,223 @@ fun ListMaquinas(
                     }
                 }
             }
-            item {
-                OutlinedTextField(
-                    value = idsala.value,
-                    onValueChange = {
-                        idsala.value = it
-                    },
-                    keyboardOptions = KeyboardOptions.Default.copy(
-                        keyboardType = KeyboardType.Ascii,
-                        imeAction = ImeAction.Done
-                    ),
-                    keyboardActions = KeyboardActions(
-                        onDone = {
-                            viewModel.getMaquinasSala(
-                                idsala.value.toInt()
-                            )
-                        }
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 2.dp, horizontal = 10.dp),
-                    label = { Text("Ingresa código o nombre del material") },
-                    /*trailingIcon = {
-                    IconButton(onClick = {
-                        dropcam.value = false
-                        drop.value = !drop.value
-                    }) {
-                        Icon(Icons.Filled.ExpandLess, "contentDescription")
+            if(inputRegion.value.isNotBlank()&&inputSala.value.isNotBlank()){
+                item {
+                    val n = if(maquinasSala.isNotEmpty()) "N°: ${maquinasSala.size}"
+                    else ""
+                    val tittla = if(maquinasSala.isNotEmpty()) "Maquinas en sala"
+                    else "Sin maquinas en sala"
+                    val icon = if(maquinasSala.isNotEmpty()) Icons.Filled.TouchApp
+                    else Icons.Filled.Cancel
+                    Box(
+                        modifier =
+                        Modifier
+                            .padding(horizontal = 10.dp, vertical = 5.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .fillMaxWidth()
+                            .background(graydark)
+                            .clickable {
+                                expand_List.value = !expand_List.value
+                            }
+                    ) {
+                        Text(
+                            text = n,
+                            style = MaterialTheme.typography.subtitle2,
+                            fontSize = 12.sp,
+                            modifier = Modifier
+                                .padding(horizontal = 10.dp, vertical = 10.dp)
+                                .align(Alignment.CenterStart)
+                        )
+                        Text(
+                            text = tittla,
+                            style = MaterialTheme.typography.subtitle2,
+                            fontSize = 15.sp,
+                            modifier = Modifier
+                                .padding(horizontal = 10.dp, vertical = 10.dp)
+                                .align(Alignment.Center)
+                        )
+                        Icon(
+                            icon,
+                            contentDescription = "",
+                            tint = Color.White,
+                            modifier = Modifier
+                                .align(Alignment.CenterEnd)
+                                .padding(horizontal = 10.dp)
+                        )
                     }
-                },*/
-                )
-
-            }
-            itemsIndexed(maquinasSala) { index, item ->
-                var bol = rememberSaveable {
-                    mutableStateOf(false)
                 }
-                Card(
-                    modifier = Modifier
-                        .padding(5.dp)
-                        .fillMaxWidth()
-                ) {
+            }
 
-                    Column(modifier = Modifier.clickable { bol.value = !bol.value }) {
-                        val indexx = index + 1
-                        Row() {
-                            Image(
-                                painter = painterResource(R.drawable.maquinas_icon),
-                                contentDescription = "",
-                                modifier = Modifier
-                                    .size(45.dp)
-                                    .padding(10.dp)
-                            )
-                            Column() {
-                                Text(
-                                    text = "Maquina no. ${indexx}",
-                                    fontSize = 14.sp,
-                                    color = Color.White,
+            itemsIndexed(maquinasSala) { index, item ->
+
+                AnimatedVisibility(visible = expand_List.value ) {
+                    var bol = rememberSaveable {
+                        mutableStateOf(false)
+                    }
+                    Card(
+                        modifier = Modifier
+                            .padding(horizontal = 10.dp, vertical = 5.dp)
+                            .fillMaxWidth()
+                    ) {
+
+                        Column(modifier = Modifier.clickable { bol.value = !bol.value }) {
+                            val indexx = index + 1
+                            Row() {
+                                Image(
+                                    painter = painterResource(R.drawable.maquinas_icon),
+                                    contentDescription = "",
                                     modifier = Modifier
+                                        .size(45.dp)
+                                        .padding(10.dp)
                                 )
-                                Text(
-                                    text = "Nombre: ${item.mueble}",
-                                    fontSize = 14.sp,
-                                    color = Color.White,
-                                    modifier = Modifier
-                                )
-                                Text(
-                                    text = "Serie: ${item.serie}",
-                                    fontSize = 14.sp,
-                                    color = Color.White,
-                                    modifier = Modifier
-                                )
+                                Column() {
+                                    Text(
+                                        text = "Maquina no. ${indexx}",
+                                        fontSize = 14.sp,
+                                        color = Color.White,
+                                        modifier = Modifier
+                                    )
+                                    Text(
+                                        text = "Nombre: ${item.mueble}",
+                                        fontSize = 14.sp,
+                                        color = Color.White,
+                                        modifier = Modifier
+                                    )
+                                    Text(
+                                        text = "Serie: ${item.serie}",
+                                        fontSize = 14.sp,
+                                        color = Color.White,
+                                        modifier = Modifier
+                                    )
+                                }
+                            }
+                            if (bol.value) {
+                                PopupWindowDialog(bol, item)
                             }
                         }
-                        if (bol.value) {
-                            PopupWindowDialog(bol, item)
-                        }
                     }
                 }
+
             }
 
         }
     }
 }
 
+
+
 @Composable
 fun PopupWindowDialog(x1: MutableState<Boolean>, item: MaquinasSala) {
-    val openDialog = remember { mutableStateOf(false) }
 
-    Popup(
-        alignment = Alignment.TopCenter,
-        properties = PopupProperties(),
-    ) {
-
-        Column(
-            Modifier
-                .padding(top = 5.dp)
-                .background(graydark, RoundedCornerShape(10.dp))
-                .border(1.dp, color = Color.Black, RoundedCornerShape(10.dp))
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(reds)
+    AlertDialog(
+        onDismissRequest = {
+//            clientes.value = false
+        },
+        title = null,
+        buttons = {
+            Column(
+                Modifier
+                    .padding(top = 5.dp)
+                    .background(graydark, RoundedCornerShape(10.dp))
+                    .border(1.dp, color = Color.Black, RoundedCornerShape(10.dp))
             ) {
-                IconButton(onClick = { x1.value = false }, modifier = Modifier.align(CenterEnd)) {
-                    Icon(
-                        Icons.Filled.Close, contentDescription = "", modifier = Modifier.align(
-                            CenterEnd
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(reds)
+                ) {
+                    IconButton(onClick = { x1.value = false }, modifier = Modifier.align(CenterEnd)) {
+                        Icon(
+                            Icons.Filled.Close, contentDescription = "", modifier = Modifier.align(
+                                CenterEnd
+                            )
                         )
+                    }
+                    Text(
+                        text = "No. Serie: ${item.serie}", style = MaterialTheme.typography.h6,
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(top = 30.dp)
+                    )
+
+                    Text(
+                        text = "Nombre: ${item.mueble}",
+                        style = MaterialTheme.typography.subtitle1,
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(top = 70.dp)
                     )
                 }
-                Text(
-                    text = "No. Serie: ${item.serie}", style = MaterialTheme.typography.h6,
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .padding(top = 30.dp)
-                )
-
-                Text(
-                    text = "Nombre: ${item.mueble}",
-                    style = MaterialTheme.typography.subtitle1,
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .padding(top = 70.dp)
-                )
-            }
-
-
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 10.dp)
-                    .verticalScroll(rememberScrollState()),
-                horizontalAlignment = CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                item.componentes.forEachIndexed() { ind, it ->
-                    Card(
+                if (item.componentes != null){
+                    Column(
                         modifier = Modifier
-                            .padding(horizontal = 10.dp, vertical = 5.dp)
-                            .fillMaxWidth(), backgroundColor = colorResource(
-                            id = R.color.blackdark
-                        )
+                            .fillMaxSize()
+                            .padding(horizontal = 10.dp)
+                            .verticalScroll(rememberScrollState()),
+                        horizontalAlignment = CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
                     ) {
-                        val indexx = ind + 1
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                Icons.Filled.List,
-                                contentDescription = "",
-                                modifier = Modifier.padding(start = 10.dp)
-                            )
-                            Column() {
-                                Text(
-                                    text = "Codigo: ${it.clave}",
-                                    fontSize = 14.sp,
-                                    color = Color.White,
-                                    modifier = Modifier.padding(
-                                        start = 15.dp,
-                                        top = 10.dp,
-                                        end = 10.dp
-                                    )
+                        item.componentes.forEachIndexed() { ind, it ->
+                            Card(
+                                modifier = Modifier
+                                    .padding(horizontal = 10.dp, vertical = 5.dp)
+                                    .fillMaxWidth(), backgroundColor = colorResource(
+                                    id = R.color.blackdark
                                 )
+                            ) {
+                                val indexx = ind + 1
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        Icons.Filled.List,
+                                        contentDescription = "",
+                                        modifier = Modifier.padding(start = 10.dp)
+                                    )
+                                    Column() {
+                                        Text(
+                                            text = "Codigo: ${it.clave}",
+                                            fontSize = 14.sp,
+                                            color = Color.White,
+                                            modifier = Modifier.padding(
+                                                start = 15.dp,
+                                                top = 10.dp,
+                                                end = 10.dp
+                                            )
+                                        )
 
-                                Text(
-                                    text = "Nombre: ${it.nombre}",
-                                    fontSize = 14.sp,
-                                    color = Color.White,
-                                    modifier = Modifier.padding(
-                                        start = 15.dp,
-                                        top = 3.dp,
-                                        end = 10.dp,
-                                        bottom = 10.dp
-                                    )
-                                )
+                                        Text(
+                                            text = "Nombre: ${it.nombre}",
+                                            fontSize = 14.sp,
+                                            color = Color.White,
+                                            modifier = Modifier.padding(
+                                                start = 15.dp,
+                                                top = 3.dp,
+                                                end = 10.dp,
+                                                bottom = 10.dp
+                                            )
+                                        )
+                                    }
+                                }
+
                             }
                         }
-
                     }
+                }else{
+                    Text(
+                        text = "Sin datos en la base",
+                        fontSize = 14.sp,
+                        color = Color.White,
+                        modifier = Modifier.padding(
+                            start = 30.dp,
+                            top = 6.dp,
+                            end = 20.dp,
+                            bottom = 20.dp
+                        ).align(CenterHorizontally),
+                    )
                 }
             }
-        }
-    }
+        },
+        shape = RoundedCornerShape(15.dp)
+    )
+
+
 }

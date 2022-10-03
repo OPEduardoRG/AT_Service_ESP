@@ -84,6 +84,7 @@ val regionesEspana = listOf<RegionesEsp>(
         RegionesEsp("25", "Zaragoza"),
     )
     var getListSimilar = mutableStateListOf<RegionesEsp>()
+    var getListSimilarSalas = mutableStateListOf<Salas>()
 
     fun getValidarSimilarLista(context: Context, simRegion: String){
         getListSimilar.clear()
@@ -135,6 +136,16 @@ val regionesEspana = listOf<RegionesEsp>(
                 eror()
             }
         }
+    }
+
+    fun getSimilarSala(context: Context, similar: String){
+        getListSimilarSalas.clear()
+        if(similar.count() >= 2){
+            getListSimilarSalas += salasxRegion.filter {
+                it.nombre!!.uppercase().contains(similar.uppercase())
+            } .asReversed()
+        }
+
     }
     private fun alert(string:String,color:Boolean){
         viewModelScope.launch(Dispatchers.IO) {
