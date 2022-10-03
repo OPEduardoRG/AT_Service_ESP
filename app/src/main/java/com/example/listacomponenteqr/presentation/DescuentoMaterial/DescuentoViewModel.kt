@@ -7,7 +7,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.listacomponenteqr.RetrofitHelper
+import com.example.listacomponenteqr.data.remote.dto.MaquinasSala.MaquinasSala
 import com.example.listacomponenteqr.data.remote.dto.SolicitudRefaccion.*
+import com.example.listacomponenteqr.presentation.maquinas_en_sala.MaquinasSalaViewModel
 import com.example.listacomponenteqr.utils.SharedPrefence
 import com.example.listacomponenteqr.utils.Utils
 import com.example.zitrocrm.screens.login.components.Error
@@ -31,6 +33,9 @@ class DescuentoViewModel  @Inject constructor(
     val description = mutableStateOf("")
     val response = mutableStateOf("")
     val granel = mutableStateOf("")
+    var getListSimilar = mutableStateListOf<RegionesEsp>()
+    val maquinasSala = mutableStateListOf<MaquinasSala>()
+    var getListSimilarSalas = mutableStateListOf<Salas>()
 
     fun getMaterial(string:String, context: Context) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -51,6 +56,15 @@ class DescuentoViewModel  @Inject constructor(
                 eror()
                 Log.d("getCodigos", "Error getCodigos", e)
             }
+        }
+    }
+
+    fun getValidarSimilarRegion(context: Context, simRegion: String){
+        getListSimilar.clear()
+        if(simRegion.count() >= 2){
+            getListSimilar += MaquinasSalaViewModel().regionesEspana.filter {
+                it.nombre!!.uppercase().contains(simRegion.uppercase())
+            } .asReversed()
         }
     }
 

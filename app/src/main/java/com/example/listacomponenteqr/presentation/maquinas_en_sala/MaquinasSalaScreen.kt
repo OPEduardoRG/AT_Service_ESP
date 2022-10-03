@@ -612,7 +612,7 @@ fun PopupWindowDialog(x1: MutableState<Boolean>, item: MaquinasSala) {
                             top = 6.dp,
                             end = 20.dp,
                             bottom = 20.dp
-                        ).align(CenterHorizontally),
+                        ),
                     )
                 }
             }

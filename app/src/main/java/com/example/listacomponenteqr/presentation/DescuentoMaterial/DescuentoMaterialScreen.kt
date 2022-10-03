@@ -10,9 +10,7 @@ import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.FastOutLinearInEasing
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -31,10 +29,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
@@ -48,10 +49,13 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.listacomponenteqr.R
+import com.example.listacomponenteqr.data.remote.dto.MaquinasSala.MaquinasSala
 import com.example.listacomponenteqr.data.remote.dto.SolicitudRefaccion.Refacciones
 import com.example.listacomponenteqr.data.remote.dto.SolicitudRefaccion.RegionesEsp
 import com.example.listacomponenteqr.data.remote.dto.SolicitudRefaccion.Salas
 import com.example.listacomponenteqr.data.remote.dto.SolicitudRefaccion.Solicitud
+import com.example.listacomponenteqr.presentation.maquinas_en_sala.MaquinasSalaScreen
+import com.example.listacomponenteqr.presentation.maquinas_en_sala.MaquinasSalaViewModel
 import com.example.listacomponenteqr.ui.theme.blackdark
 import com.example.listacomponenteqr.ui.theme.blacktransp
 import com.example.listacomponenteqr.ui.theme.graydark
@@ -67,7 +71,7 @@ import java.util.concurrent.Executors
 /**
  * Created by Brian Fernando Mtz on 07-2022.
  */
-@SuppressLint("UnrememberedMutableState")
+@SuppressLint("UnrememberedMutableState", "UnusedTransitionTargetStateParameter")
 @Composable
 fun DescuentoMaterialScreen(
     navController: NavController,
@@ -82,63 +86,13 @@ fun DescuentoMaterialScreen(
     val droplist = rememberSaveable { mutableStateOf(true) }
     val seriex = rememberSaveable() { mutableStateOf("") }
     val observacionesx = rememberSaveable() { mutableStateOf("") }
+    val focusManager = LocalFocusManager.current
 
-    val regionesEspana = rememberSaveable{
-        listOf<RegionesEsp>(
-            RegionesEsp("30","Alava"),
-            RegionesEsp("36","Albacete"),
-            RegionesEsp("7","Alicante"),
-            RegionesEsp("5","Almeria"),
-            RegionesEsp("37","Asturias"),
-            RegionesEsp("12","Avila"),
-            RegionesEsp("13","Badajoz"),
-            RegionesEsp("31","Baleares"),
-            RegionesEsp("40","Barcelona"),
-            RegionesEsp("1","Burgos"),
-            RegionesEsp("17","Caceres"),
-            RegionesEsp("19","Cadiz"),
-            RegionesEsp("34","Cantabria"),
-            RegionesEsp("51","Castellon"),
-            RegionesEsp("52","Ceuta"),
-            RegionesEsp("46","Ciudad Real"),
-            RegionesEsp("15","Cordoba"),
-            RegionesEsp("44","Cuenca"),
-            RegionesEsp("50","Gerona"),
-            RegionesEsp("18","Granada"),
-            RegionesEsp("28","Guadalajara"),
-            RegionesEsp("32","Guipuzcoa"),
-            RegionesEsp("33","Huelva"),
-            RegionesEsp("27","Huesca"),
-            RegionesEsp("14","Jaen"),
-            RegionesEsp("38","La Coruña"),
-            RegionesEsp("21","Las Palmas"),
-            RegionesEsp("43","Leon"),
-            RegionesEsp("41","Lerida"),
-            RegionesEsp("35","Logroño"),
-            RegionesEsp("53","Lugo"),
-            RegionesEsp("6","Madrid"),
-            RegionesEsp("2","Malaga"),
-            RegionesEsp("42","Melilla"),
-            RegionesEsp("3","Murcia"),
-            RegionesEsp("23","Navarra"),
-            RegionesEsp("29","no-region-0004"),
-            RegionesEsp("49","Orense"),
-            RegionesEsp("4","Palencia"),
-            RegionesEsp("39","Pontevedra"),
-            RegionesEsp("16","Salamanca"),
-            RegionesEsp("24","Santa Cruz Tenerife"),
-            RegionesEsp("22","Segovia"),
-            RegionesEsp("20","Sevilla"),
-            RegionesEsp("45","Soria"),
-            RegionesEsp("8","Tarragona"),
-            RegionesEsp("26","Teruel"),
-            RegionesEsp("48","Toledo"),
-            RegionesEsp("11","Valencia"),
-            RegionesEsp("9","Valladolid"),
-            RegionesEsp("10","Vizcaya"),
-            RegionesEsp("47","Zamora"),
-            RegionesEsp("25","Zaragoza"),
-        )
+//    val regionesEspana = MaquinasSalaViewModel().regionesEspana
+
+    var regionesEspana = when (viewModel.getListSimilar.size) {
+        0 -> MaquinasSalaViewModel().regionesEspana
+        else -> viewModel.getListSimilar
     }
     val dropRegion = rememberSaveable { mutableStateOf(false) }
     val dropSala = rememberSaveable { mutableStateOf(false) }
@@ -187,30 +141,51 @@ fun DescuentoMaterialScreen(
                         titleHomeDescuento()
                     }
                     item{
+                        val transitionState = remember {
+                            MutableTransitionState(dropRegion.value).apply {
+                                targetState = !dropRegion.value
+                            }
+                        }
+                        val transition =
+                            updateTransition(targetState = transitionState, label = "transition")
+                        val arrowRotationDegree by transition.animateFloat({
+                            tween(durationMillis = 300)
+                        }, label = "rotationDegreeTransition") {
+                            if (dropRegion.value) 0f else 180f
+                        }
                         OutlinedTextField(
-                            enabled=false,
+                            enabled=true,
                             value = inputRegion.value,
                             onValueChange = {
+                                            inputRegion.value = it
+                                viewModel.getValidarSimilarRegion(context, it)
                             },
-                            keyboardOptions = KeyboardOptions.Default.copy(
-                                keyboardType = KeyboardType.Ascii,
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Text,
                                 imeAction = ImeAction.Done
                             ),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 2.dp, horizontal = 10.dp)
-                                .clickable {
-                                    dropRegion.value = !dropRegion.value
-                                    dropSala.value = false
-                                },
-                            label = { Text("Selecciona la región") },
-                            trailingIcon = {
-                                IconButton(onClick = {
-                                    dropRegion.value = !dropRegion.value
-                                    dropSala.value= false
-                                }) {
-                                    Icon(Icons.Filled.ExpandLess, "contentDescription")
+                                .onFocusChanged { focusState ->
+                                    if (focusState.isFocused) {
+                                        dropRegion.value = true
+                                    } else if (focusState.hasFocus) {
+                                        dropRegion.value = false
+                                        focusManager.clearFocus()
+                                    }
                                 }
+//                                .clickable {
+//                                    dropRegion.value = !dropRegion.value
+//                                    dropSala.value = false
+//                                }
+                                ,
+                            label = { Text("Selecciona o ingresa la región") },
+                            trailingIcon = {
+                                CardArrow(
+                                    arrowRotationDegree,
+                                    { dropRegion.value = !dropRegion.value }
+                                )
                             }
                         )
                     }
@@ -226,6 +201,10 @@ fun DescuentoMaterialScreen(
                                         dropRegion.value = false
                                         viewModel.getSalas(item.regionidx.toString())
                                         inputSala.value = ""
+                                        focusManager.clearFocus()
+                                        viewModel.maquinasSala.clear()
+                                        inputSala.value = ""
+                                        viewModel.getListSimilarSalas.clear()
                                     }
                             ) {
                                 Row(
@@ -699,6 +678,25 @@ fun DescuentoMaterialScreen(
         viewModel.delate.value = false
     }
     alertDescuento()
+}
+
+@Composable
+fun CardArrow(
+    degrees: Float,
+    onClick: () -> Unit
+) {
+    IconButton(
+        onClick = onClick,
+        content = {
+            Icon(
+                Icons.Filled.ArrowDropDown,
+                contentDescription = "",
+                modifier = Modifier
+                    .rotate(degrees)
+                    .size(30.dp)
+            )
+        }
+    )
 }
 @Composable
 fun cameraOpen(
