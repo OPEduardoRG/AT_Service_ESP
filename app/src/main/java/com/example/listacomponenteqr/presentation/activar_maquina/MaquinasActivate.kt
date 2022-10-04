@@ -92,7 +92,7 @@ fun MaquinasActivate(
                     .background(Color.Black)
             ) {
                 tittleActManual()
-                activarManual()
+//                activarManual()
             }
         }else{
             ContentQR(cameraM = cameraM,act_manual,actmaquinas)
@@ -286,8 +286,8 @@ private fun CustomTopAppBarMaquina(
                     .clickable {
                         act_manual.value = !act_manual.value
                     }) {
-                    Icon(icon, contentDescription = "QR",modifier = Modifier.align(CenterHorizontally),Color.White)
-                    Text(text = text,fontSize = 9.sp,modifier = Modifier.align(CenterHorizontally), color = Color.White)
+//                    Icon(icon, contentDescription = "QR",modifier = Modifier.align(CenterHorizontally),Color.White)
+//                    Text(text = text,fontSize = 9.sp,modifier = Modifier.align(CenterHorizontally), color = Color.White)
                 }
                 if(act_manual.value==false) {
                     TextField(
