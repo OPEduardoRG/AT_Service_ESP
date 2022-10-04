@@ -68,6 +68,7 @@ import com.google.common.util.concurrent.ListenableFuture
 import kotlinx.coroutines.delay
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+
 /**
  * Created by Brian Fernando Mtz on 07-2022.
  */
@@ -76,7 +77,7 @@ import java.util.concurrent.Executors
 fun DescuentoMaterialScreen(
     navController: NavController,
 ) {
-    val viewModel : DescuentoViewModel = hiltViewModel()
+    val viewModel: DescuentoViewModel = hiltViewModel()
     val drop = rememberSaveable { mutableStateOf(false) }
     val dropcam = rememberSaveable { mutableStateOf(false) }
     val imputsearch = rememberSaveable() { mutableStateOf("") }
@@ -94,6 +95,11 @@ fun DescuentoMaterialScreen(
         0 -> MaquinasSalaViewModel().regionesEspana
         else -> viewModel.getListSimilar
     }
+
+    var salas = when (viewModel.getListSimilarSalas.size) {
+        0 -> viewModel.salasxRegion
+        else -> viewModel.getListSimilarSalas
+    }
     val dropRegion = rememberSaveable { mutableStateOf(false) }
     val dropSala = rememberSaveable { mutableStateOf(false) }
     val inputRegion = rememberSaveable() { mutableStateOf("") }
@@ -102,28 +108,34 @@ fun DescuentoMaterialScreen(
     val context = LocalContext.current
     val qr_val = Utils(context)
     val camMaquina = mutableStateOf(false)
-    if(viewModel.response.value=="1"){
+    if (viewModel.response.value == "1") {
         descrip.value = viewModel.description.value
-        if(viewModel.granel.value=="1"){
+        if (viewModel.granel.value == "1") {
             cantidad.value = ""
             granel.value = "1"
-        }else{
+        } else {
             cantidad.value = "1"
             granel.value = "0"
         }
-        viewModel.response.value="0"
+        viewModel.response.value = "0"
     }
     LaunchedEffect(key1 = imputsearch.value, block = {
         if (imputsearch.value.isBlank()) return@LaunchedEffect
         delay(2000)
-        if (descrip.value.isEmpty()){
-            viewModel.getMaterial(imputsearch.value,context)
+        if (descrip.value.isEmpty()) {
+            viewModel.getMaterial(imputsearch.value, context)
             drop.value = true
         }
     })
     Scaffold(
         topBar = {
-            TopAppBarDescuento(navController,viewModel.listDescuento,seriex.value,observacionesx.value,inputSalaID.value)
+            TopAppBarDescuento(
+                navController,
+                viewModel.listDescuento,
+                seriex.value,
+                observacionesx.value,
+                inputSalaID.value
+            )
         }
     ) {
         Column(
@@ -137,10 +149,10 @@ fun DescuentoMaterialScreen(
                         .clip(RoundedCornerShape(10.dp))
                         .background(blacktransp)
                 ) {
-                    item{
+                    item {
                         titleHomeDescuento()
                     }
-                    item{
+                    item {
                         val transitionState = remember {
                             MutableTransitionState(dropRegion.value).apply {
                                 targetState = !dropRegion.value
@@ -154,10 +166,10 @@ fun DescuentoMaterialScreen(
                             if (dropRegion.value) 0f else 180f
                         }
                         OutlinedTextField(
-                            enabled=true,
+                            enabled = true,
                             value = inputRegion.value,
                             onValueChange = {
-                                            inputRegion.value = it
+                                inputRegion.value = it
                                 viewModel.getValidarSimilarRegion(context, it)
                             },
                             keyboardOptions = KeyboardOptions(
@@ -179,7 +191,7 @@ fun DescuentoMaterialScreen(
 //                                    dropRegion.value = !dropRegion.value
 //                                    dropSala.value = false
 //                                }
-                                ,
+                            ,
                             label = { Text("Selecciona o ingresa la región") },
                             trailingIcon = {
                                 CardArrow(
@@ -189,7 +201,7 @@ fun DescuentoMaterialScreen(
                             }
                         )
                     }
-                    if(dropRegion.value){
+                    if (dropRegion.value) {
                         itemsIndexed(regionesEspana) { index, item ->
                             Card(
                                 Modifier
@@ -232,14 +244,28 @@ fun DescuentoMaterialScreen(
                             }
                         }
                     }
-                    item{
+                    item {
+                        val transitionState = remember {
+                            MutableTransitionState(dropSala.value).apply {
+                                targetState = !dropSala.value
+                            }
+                        }
+                        val transition =
+                            updateTransition(targetState = transitionState, label = "transition")
+                        val arrowRotationDegree by transition.animateFloat({
+                            tween(durationMillis = 300)
+                        }, label = "rotationDegreeTransition") {
+                            if (dropSala.value) 0f else 180f
+                        }
                         OutlinedTextField(
-                            enabled = false,
+                            enabled = inputRegion.value.isNotBlank(),
                             value = inputSala.value,
                             onValueChange = {
+                                inputSala.value = it
+                                viewModel.getValidarsimilarSalas(inputSala.value)
                             },
-                            keyboardOptions = KeyboardOptions.Default.copy(
-                                keyboardType = KeyboardType.Ascii,
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Text,
                                 imeAction = ImeAction.Done
                             ),
                             modifier = Modifier
@@ -248,15 +274,21 @@ fun DescuentoMaterialScreen(
                                 .clickable {
                                     dropSala.value = !dropSala.value
                                     dropRegion.value = false
-                                },
-                            label = { Text("Selecciona la sala") },
-                            trailingIcon = {
-                                IconButton(onClick = {
-                                    dropSala.value = !dropSala.value
-                                    dropRegion.value =  false
-                                }) {
-                                    Icon(Icons.Filled.ExpandLess, "contentDescription")
                                 }
+                                .onFocusChanged { focusState ->
+                                    if (focusState.isFocused) {
+                                        dropSala.value = true
+                                    } else if (focusState.hasFocus) {
+                                        dropSala.value = false
+                                        focusManager.clearFocus()
+                                    }
+                                },
+                            label = { Text("Selecciona o ingrese la sala") },
+                            trailingIcon = {
+                                CardArrow(
+                                    arrowRotationDegree,
+                                    { dropSala.value = !dropSala.value }
+                                )
                             }
                         )
                     }
@@ -283,8 +315,8 @@ fun DescuentoMaterialScreen(
                             }
                         }
                     }
-                    if(dropSala.value){
-                        itemsIndexed(viewModel.salasxRegion) { idex, item ->
+                    if (dropSala.value) {
+                        itemsIndexed(salas) { idex, item ->
                             Card(
                                 Modifier
                                     .padding(horizontal = 10.dp, vertical = 3.dp)
@@ -295,6 +327,7 @@ fun DescuentoMaterialScreen(
                                         inputSala.value = item.nombre.toString()
                                         inputSalaID.value = item.salaid.toString()
                                         dropSala.value = false
+                                        viewModel.getListSimilarSalas.clear()
                                     }
                             ) {
                                 Row(
@@ -344,19 +377,21 @@ fun DescuentoMaterialScreen(
                             trailingIcon = {
                                 Icon(Icons.Filled.Subtitles, "contentDescription")
                             },
-                            leadingIcon ={
-                                IconButton(onClick = {
-                                    drop.value = false
-                                    dropcam.value = false
-                                    camMaquina.value = !camMaquina.value
-                                },) {
+                            leadingIcon = {
+                                IconButton(
+                                    onClick = {
+                                        drop.value = false
+                                        dropcam.value = false
+                                        camMaquina.value = !camMaquina.value
+                                    },
+                                ) {
                                     Icon(Icons.Filled.QrCode, "contentDescription")
                                 }
                             }
                         )
                     }
                     item {
-                        cameraOpen(camMaquina,seriex,false)
+                        cameraOpen(camMaquina, seriex, false)
                     }
                     item {
                         OutlinedTextField(
@@ -380,7 +415,11 @@ fun DescuentoMaterialScreen(
                                 Icon(Icons.Filled.Rtt, "contentDescription")
                             },
                         )
-                        Divider(color = colorResource(R.color.graydark), thickness = 1.dp, modifier = Modifier.padding(top = 9.dp, start = 8.dp, end = 8.dp))
+                        Divider(
+                            color = colorResource(R.color.graydark),
+                            thickness = 1.dp,
+                            modifier = Modifier.padding(top = 9.dp, start = 8.dp, end = 8.dp)
+                        )
                     }
                     item {
                         OutlinedTextField(
@@ -396,9 +435,9 @@ fun DescuentoMaterialScreen(
                             ),
                             keyboardActions = KeyboardActions(
                                 onDone = {
-                                    if(imputsearch.value.isNotBlank()){
-                                        progressBar.value =true
-                                        viewModel.getMaterial(imputsearch.value,context)
+                                    if (imputsearch.value.isNotBlank()) {
+                                        progressBar.value = true
+                                        viewModel.getMaterial(imputsearch.value, context)
                                     }
                                 }
                             ),
@@ -415,12 +454,14 @@ fun DescuentoMaterialScreen(
                                     Icon(Icons.Filled.ExpandLess, "contentDescription")
                                 }
                             },
-                            leadingIcon ={
-                                IconButton(onClick = {
-                                    drop.value = false
-                                    camMaquina.value = false
-                                    dropcam.value = !dropcam.value
-                                },) {
+                            leadingIcon = {
+                                IconButton(
+                                    onClick = {
+                                        drop.value = false
+                                        camMaquina.value = false
+                                        dropcam.value = !dropcam.value
+                                    },
+                                ) {
                                     Icon(Icons.Filled.QrCode, "contentDescription")
                                 }
                             }
@@ -448,9 +489,9 @@ fun DescuentoMaterialScreen(
                         }
                     }
                     item {
-                        cameraOpen(dropcam,imputsearch,true)
+                        cameraOpen(dropcam, imputsearch, true)
                     }
-                    if(drop.value){
+                    if (drop.value) {
                         itemsIndexed(viewModel.codigo) { index, item ->
                             Card(
                                 Modifier
@@ -502,7 +543,7 @@ fun DescuentoMaterialScreen(
                         )
                     }
                     item {
-                        AnimatedVisibility(visible = granel.value=="1") {
+                        AnimatedVisibility(visible = granel.value == "1") {
                             val validationInt = Utils(context)
                             OutlinedTextField(
                                 value = cantidad.value,
@@ -538,7 +579,10 @@ fun DescuentoMaterialScreen(
                         val isRotated = rememberSaveable { mutableStateOf(false) }
                         val rotationAngle by animateFloatAsState(
                             targetValue = if (isRotated.value) 360F else 0F,
-                            animationSpec = tween(durationMillis = 500,easing = FastOutLinearInEasing)
+                            animationSpec = tween(
+                                durationMillis = 500,
+                                easing = FastOutLinearInEasing
+                            )
 
                         )
                         Button(
@@ -565,8 +609,7 @@ fun DescuentoMaterialScreen(
                                 .graphicsLayer {
                                     rotationY = rotationAngle
                                     cameraDistance = 8 * density
-                                }
-                            ,
+                                },
                             shape = RoundedCornerShape(10),
                             colors = ButtonDefaults.buttonColors(
                                 backgroundColor = colorResource(id = R.color.reds)
@@ -593,7 +636,7 @@ fun DescuentoMaterialScreen(
                                     }
                             ) {
                                 Text(
-                                    text = "N°: "+viewModel.listDescuento.size.toString(),
+                                    text = "N°: " + viewModel.listDescuento.size.toString(),
                                     style = MaterialTheme.typography.subtitle2,
                                     fontSize = 12.sp,
                                     modifier = Modifier
@@ -609,18 +652,25 @@ fun DescuentoMaterialScreen(
                                         .align(Alignment.Center)
                                 )
                                 Icon(
-                                    Icons.Filled.TouchApp, contentDescription ="",tint = Color.White, modifier = Modifier
+                                    Icons.Filled.TouchApp,
+                                    contentDescription = "",
+                                    tint = Color.White,
+                                    modifier = Modifier
                                         .align(Alignment.CenterEnd)
-                                        .padding(horizontal = 10.dp))
+                                        .padding(horizontal = 10.dp)
+                                )
                             }
                         }
                     }
                     itemsIndexed(viewModel.listDescuento) { index, item ->
-                        AnimatedVisibility(visible = droplist.value ) {
+                        AnimatedVisibility(visible = droplist.value) {
                             val isRotated = rememberSaveable { mutableStateOf(false) }
                             val rotationAngle by animateFloatAsState(
                                 targetValue = if (isRotated.value) 360F else 0F,
-                                animationSpec = tween(durationMillis = 500, easing = FastOutLinearInEasing)
+                                animationSpec = tween(
+                                    durationMillis = 500,
+                                    easing = FastOutLinearInEasing
+                                )
                             )
                             Card(
                                 Modifier
@@ -632,13 +682,18 @@ fun DescuentoMaterialScreen(
                                         cameraDistance = 16 * density
                                     }
                             ) {
-                                Row(modifier = Modifier
-                                    .align(Alignment.CenterHorizontally)
+                                Row(
+                                    modifier = Modifier
+                                        .align(Alignment.CenterHorizontally)
                                 ) {
                                     Icon(
-                                        Icons.Filled.FactCheck, contentDescription ="",tint = Color.White,modifier = Modifier
+                                        Icons.Filled.FactCheck,
+                                        contentDescription = "",
+                                        tint = Color.White,
+                                        modifier = Modifier
                                             .align(Alignment.CenterVertically)
-                                            .padding(start = 10.dp))
+                                            .padding(start = 10.dp)
+                                    )
                                     Text(
                                         text = "Código: " + item.codigo.toString() + "\nDescripción: " + item.desc.toString() + "\nCantidad: " + item.cantidad.toString(),
                                         style = MaterialTheme.typography.subtitle2,
@@ -647,11 +702,17 @@ fun DescuentoMaterialScreen(
                                             .fillMaxWidth(.85f)
                                             .padding(horizontal = 10.dp, vertical = 15.dp)
                                     )
-                                    IconButton(modifier = Modifier.align(Alignment.CenterVertically),onClick = {
-                                        isRotated.value = !isRotated.value
-                                        viewModel.listDescuento.removeAt(index)
-                                    }) {
-                                        Icon(Icons.Filled.Delete, contentDescription ="",tint = Color.White)
+                                    IconButton(
+                                        modifier = Modifier.align(Alignment.CenterVertically),
+                                        onClick = {
+                                            isRotated.value = !isRotated.value
+                                            viewModel.listDescuento.removeAt(index)
+                                        }) {
+                                        Icon(
+                                            Icons.Filled.Delete,
+                                            contentDescription = "",
+                                            tint = Color.White
+                                        )
                                     }
                                 }
                             }
@@ -661,7 +722,7 @@ fun DescuentoMaterialScreen(
             }
         }
     }
-    if(viewModel.delate.value) {
+    if (viewModel.delate.value) {
         viewModel.listDescuento.clear()
         inputRegion.value = ""
         inputSala.value = ""
@@ -698,17 +759,19 @@ fun CardArrow(
         }
     )
 }
+
 @Composable
 fun cameraOpen(
     dropcam: MutableState<Boolean>,
     imputsearch: MutableState<String>,
-    valor_uno:Boolean
+    valor_uno: Boolean
 ) {
     AnimatedVisibility(
         visible = dropcam.value,
     ) {
-        Box(modifier = Modifier
-            .height(250.dp),
+        Box(
+            modifier = Modifier
+                .height(250.dp),
             contentAlignment = Alignment.TopCenter
         ) {
             val context = LocalContext.current
@@ -716,12 +779,16 @@ fun cameraOpen(
             var preview by remember { mutableStateOf<Preview?>(null) }
             val datastore = SharedPrefence(LocalContext.current)
             val mMediaPlayer = MediaPlayer.create(context, R.raw.bip)
-            Column(modifier = Modifier
-                .fillMaxSize()) {
-                Card(modifier = Modifier
-                    .fillMaxWidth()
-                    .height(282.dp)
-                    .padding(10.dp)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+            ) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(282.dp)
+                        .padding(10.dp)
+                ) {
                     AndroidView(factory = { AndroidViewContext ->
                         PreviewView(AndroidViewContext).apply {
                             this.scaleType = PreviewView.ScaleType.FILL_CENTER
@@ -737,7 +804,8 @@ fun cameraOpen(
                             val cameraSelector: CameraSelector = CameraSelector.Builder()
                                 .requireLensFacing(CameraSelector.LENS_FACING_BACK)
                                 .build()
-                            val cameraExecutors: ExecutorService = Executors.newSingleThreadExecutor()
+                            val cameraExecutors: ExecutorService =
+                                Executors.newSingleThreadExecutor()
                             val cameraProviderFuture: ListenableFuture<ProcessCameraProvider> =
                                 ProcessCameraProvider.getInstance(context)
 
@@ -745,17 +813,18 @@ fun cameraOpen(
                                 preview = Preview.Builder().build().also {
                                     it.setSurfaceProvider(previewView.surfaceProvider)
                                 }
-                                val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
+                                val cameraProvider: ProcessCameraProvider =
+                                    cameraProviderFuture.get()
                                 val barcodeAnalyser = BarcodeAnalyser { barcodes ->
                                     barcodes.forEach { barcode ->
                                         barcode.rawValue?.let { barcodeValue ->
-                                            if(dropcam.value) {
+                                            if (dropcam.value) {
                                                 mMediaPlayer.start()
                                                 val validationmaquina = barcodeValue.split(" ")
-                                                if (valor_uno){
-                                                    imputsearch.value =validationmaquina[0]
-                                                }else{
-                                                    imputsearch.value =validationmaquina[1]
+                                                if (valor_uno) {
+                                                    imputsearch.value = validationmaquina[0]
+                                                } else {
+                                                    imputsearch.value = validationmaquina[1]
                                                 }
                                                 dropcam.value = false
                                             }
@@ -764,7 +833,8 @@ fun cameraOpen(
                                 }
                                 val imageAnalysis: ImageAnalysis = ImageAnalysis.Builder()
                                     .setBackpressureStrategy(
-                                        ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                                        ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST
+                                    )
                                     .build()
                                     .also {
                                         it.setAnalyzer(cameraExecutors, barcodeAnalyser)
@@ -797,13 +867,14 @@ fun cameraOpen(
 }
 
 @Composable
-private fun titleHomeDescuento(){
-    Column(modifier = Modifier
-        .padding(0.dp, 0.dp, 0.dp, 5.dp)
-        .clip(RoundedCornerShape(10.dp))
-        .background(blackdark)
-        .fillMaxWidth()
-        .padding(5.dp),
+private fun titleHomeDescuento() {
+    Column(
+        modifier = Modifier
+            .padding(0.dp, 0.dp, 0.dp, 5.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .background(blackdark)
+            .fillMaxWidth()
+            .padding(5.dp),
         verticalArrangement = Arrangement.SpaceEvenly,
         horizontalAlignment = Alignment.CenterHorizontally
     )
@@ -819,18 +890,20 @@ private fun titleHomeDescuento(){
         Text(
             text = "DESCUENTO DE MATERIAL",
             style = MaterialTheme.typography.subtitle2,
-            modifier = Modifier.align(Alignment.CenterHorizontally))
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        )
     }
 }
+
 @Composable
 private fun TopAppBarDescuento(
     navController: NavController,
     list: MutableList<Solicitud>,
-    serie:String,
-    observaciones:String,
-    sala:String
+    serie: String,
+    observaciones: String,
+    sala: String
 ) {
-    val viewModel : DescuentoViewModel = hiltViewModel()
+    val viewModel: DescuentoViewModel = hiltViewModel()
     val context = LocalContext.current
     TopAppBar(
         elevation = 0.dp,
@@ -861,7 +934,7 @@ private fun TopAppBarDescuento(
                             && observaciones.isNotBlank()
                             && sala.isNotBlank()
                 }
-                if(isValidate){
+                if (isValidate) {
                     val isRotated = rememberSaveable { mutableStateOf(false) }
                     val rotationAngle by animateFloatAsState(
                         targetValue = if (isRotated.value) 360F else 0F,
@@ -883,10 +956,16 @@ private fun TopAppBarDescuento(
                         },
                         onClick = {
                             isRotated.value = !isRotated.value
-                            viewModel.postDescuentoMaterial(ArrayList<Solicitud>(list), context = context,serie,observaciones, sala = sala)
+                            viewModel.postDescuentoMaterial(
+                                ArrayList<Solicitud>(list),
+                                context = context,
+                                serie,
+                                observaciones,
+                                sala = sala
+                            )
                         }
                     ) {
-                        Icon(Icons.Filled.Send, contentDescription ="",tint = Color.White,)
+                        Icon(Icons.Filled.Send, contentDescription = "", tint = Color.White)
                     }
                 }
             }
@@ -898,7 +977,7 @@ private fun TopAppBarDescuento(
 @Composable
 private fun alertDescuento(
     viewModel: DescuentoViewModel = hiltViewModel(),
-){
+) {
     AnimatedVisibility(visible = viewModel.alertstate.value) {
         AlertDialog(
             onDismissRequest = {
@@ -906,9 +985,9 @@ private fun alertDescuento(
             title = null,
             text = null,
             buttons = {
-                Column{
-                    Row(Modifier.padding(all = 25.dp)){
-                        if (viewModel.alertstatecolor.value){
+                Column {
+                    Row(Modifier.padding(all = 25.dp)) {
+                        if (viewModel.alertstatecolor.value) {
                             Icon(
                                 Icons.Filled.AddTask, "",
                                 tint = Color.Green,
@@ -917,7 +996,7 @@ private fun alertDescuento(
                                     .padding(horizontal = 10.dp)
                             )
                             Text(text = viewModel.textalert.value)
-                        } else{
+                        } else {
                             Icon(
                                 Icons.Filled.Cancel, "",
                                 tint = Color.Red,
@@ -928,9 +1007,9 @@ private fun alertDescuento(
                             Text(text = viewModel.textalert.value)
                         }
                     }
-                    if (viewModel.alertstatecolor.value){
+                    if (viewModel.alertstatecolor.value) {
                         Divider(color = Color.Green, thickness = 3.dp)
-                    }else {
+                    } else {
                         Divider(color = Color.Red, thickness = 3.dp)
                     }
                 }

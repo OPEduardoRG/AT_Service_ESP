@@ -37,6 +37,7 @@ class DescuentoViewModel  @Inject constructor(
     val maquinasSala = mutableStateListOf<MaquinasSala>()
     var getListSimilarSalas = mutableStateListOf<Salas>()
 
+
     fun getMaterial(string:String, context: Context) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
@@ -64,6 +65,15 @@ class DescuentoViewModel  @Inject constructor(
         if(simRegion.count() >= 2){
             getListSimilar += MaquinasSalaViewModel().regionesEspana.filter {
                 it.nombre!!.uppercase().contains(simRegion.uppercase())
+            } .asReversed()
+        }
+    }
+
+    fun getValidarsimilarSalas(sala: String){
+        getListSimilarSalas.clear()
+        if(sala.count() >= 2){
+            getListSimilarSalas += salasxRegion.filter {
+                it.nombre!!.uppercase().contains(sala.uppercase())
             } .asReversed()
         }
     }
