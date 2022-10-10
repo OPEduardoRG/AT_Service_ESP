@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.listacomponenteqr.RetrofitHelper
 import com.example.listacomponenteqr.data.remote.dto.SolicitudRefaccion.*
+import com.example.listacomponenteqr.presentation.maquinas_en_sala.MaquinasSalaViewModel
 import com.example.listacomponenteqr.utils.SharedPrefence
 import com.example.listacomponenteqr.utils.Utils
 import com.example.zitrocrm.screens.login.components.Error
@@ -35,6 +36,9 @@ class SolicitudViewModel @Inject constructor(
     val delate = mutableStateOf(false)
     val listSolicitud =  mutableStateListOf<Solicitud>()
     var subcentros = listOf<Subcentros>()
+    val regionesEspana = MaquinasSalaViewModel().regionesEspana
+    var getListSimilar = mutableStateListOf<RegionesEsp>()
+    var getListSimilarSalas = mutableStateListOf<Salas>()
 
     fun getSubCentros(){
         viewModelScope.launch(Dispatchers.IO) {
@@ -66,10 +70,10 @@ class SolicitudViewModel @Inject constructor(
                 val vali = Utils(context)
                 if(vali.getValidationRefaccion(string) || vali.getValidationRefaccion2(string)) {
                     codigo.clear()
-                    codigo += responseService.refacciones.filter { it.codigo!!.uppercase().contains(string.uppercase()) /*|| it.codigo!!.contains(string.toLowerCase()) */}.asReversed()//.take(5)
+                    codigo += responseService.refacciones.filter { it.codigo!!.uppercase().contains(string.uppercase())}.asReversed()
                 }
                 if(vali.getValidationName(string)){
-                    codigo += responseService.refacciones.filter { it.nombre!!.uppercase().contains(string.uppercase()) /*|| it.nombre!!.lowercase().contains(string.toLowerCase()) || it.nombre!!.contains(string)*/}.asReversed() //.take(5)
+                    codigo += responseService.refacciones.filter { it.nombre!!.uppercase().contains(string.uppercase()) }.asReversed()
                 }
                 progressBar.value =false
             } catch (e: Exception) {
@@ -187,6 +191,24 @@ class SolicitudViewModel @Inject constructor(
             delay(3000)
             Error.value = false
             progressBar.value = false
+        }
+    }
+
+    fun getSimilarRegiones(simRegion: String){
+        getListSimilar.clear()
+        if(simRegion.count() >= 2){
+            getListSimilar += regionesEspana.filter {
+                it.nombre!!.uppercase().contains(simRegion.uppercase())
+            }
+        }
+    }
+
+    fun getSimilarSalas(simSalas: String){
+        getListSimilarSalas.clear()
+        if(simSalas.count() >= 2){
+            getListSimilarSalas += salasxRegion.filter {
+                it.nombre!!.uppercase().contains(simSalas.uppercase())
+            } .asReversed()
         }
     }
 }

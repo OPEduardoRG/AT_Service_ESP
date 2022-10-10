@@ -26,7 +26,7 @@ import coil.decode.ImageDecoderDecoder
 import coil.request.ImageRequest
 import coil.size.OriginalSize
 import com.example.listacomponenteqr.R
-import com.example.listacomponenteqr.common.Constants
+import com.example.listacomponenteqr.utils.Constants
 import com.example.listacomponenteqr.ui.theme.reds
 
 val progressBar = mutableStateOf(false)

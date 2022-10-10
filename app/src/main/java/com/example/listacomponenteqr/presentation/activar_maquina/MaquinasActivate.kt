@@ -280,15 +280,15 @@ private fun CustomTopAppBarMaquina(
                         .padding(5.dp)
                         .padding(start = 0.dp, end = 15.dp)
                 )
-                Column(modifier = Modifier
-                    .padding(horizontal = 40.dp)
-                    .align(CenterStart)
-                    .clickable {
-                        act_manual.value = !act_manual.value
-                    }) {
-//                    Icon(icon, contentDescription = "QR",modifier = Modifier.align(CenterHorizontally),Color.White)
-//                    Text(text = text,fontSize = 9.sp,modifier = Modifier.align(CenterHorizontally), color = Color.White)
-                }
+//                Column(modifier = Modifier
+//                    .padding(horizontal = 40.dp)
+//                    .align(CenterStart)
+//                    .clickable {
+//                        act_manual.value = !act_manual.value
+//                    }) {
+////                    Icon(icon, contentDescription = "QR",modifier = Modifier.align(CenterHorizontally),Color.White)
+////                    Text(text = text,fontSize = 9.sp,modifier = Modifier.align(CenterHorizontally), color = Color.White)
+//                }
                 if(act_manual.value==false) {
                     TextField(
                         value = barCodeValueText.value,

@@ -1,4 +1,4 @@
-package com.example.listacomponenteqr.common
+package com.example.listacomponenteqr.utils
 /**
  * Created by Brian Fernando Mtz on 05/03/2022.
  */
@@ -55,6 +55,6 @@ object Constants {
     /**PRUEBA**/
     const val API_PRUEBA = "users"
     /**bebe bailando**/
-    const val b = true
+    const val b = false
 }
 

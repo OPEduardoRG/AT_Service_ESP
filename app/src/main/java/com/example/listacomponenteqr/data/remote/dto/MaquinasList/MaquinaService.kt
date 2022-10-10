@@ -1,6 +1,6 @@
 package com.example.listacomponenteqr.data.remote
 
-import com.example.listacomponenteqr.common.Constants
+import com.example.listacomponenteqr.utils.Constants
 import com.example.listacomponenteqr.data.remote.dto.InventarioMov.InventarioRes
 import com.example.listacomponenteqr.data.remote.dto.InventarioMov.Moviemiento
 import com.example.listacomponenteqr.data.remote.dto.Login.LoginrespDto
@@ -10,7 +10,6 @@ import com.example.listacomponenteqr.data.remote.dto.MaquinasList.MaquinaDto
 import com.example.listacomponenteqr.data.remote.dto.SolicitudRefaccion.*
 import com.example.listacomponenteqr.data.remote.dto.InventarioMov.SurtidoInventario
 import com.example.listacomponenteqr.data.remote.dto.MaquinasSala.MaquinasSala
-import com.example.listacomponenteqr.data.remote.dto.Prueba
 import retrofit2.Response
 import retrofit2.http.*
 

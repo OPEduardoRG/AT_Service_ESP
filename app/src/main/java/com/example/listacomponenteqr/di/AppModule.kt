@@ -1,6 +1,6 @@
 package com.example.listacomponenteqr.di
 
-import com.example.listacomponenteqr.common.Constants
+import com.example.listacomponenteqr.utils.Constants
 import com.example.listacomponenteqr.data.remote.ServiceApi
 import com.example.listacomponenteqr.data.repository.ActivateMaquinaRepositoryImpl
 import com.example.listacomponenteqr.data.repository.MaquinaRepositoryImpl

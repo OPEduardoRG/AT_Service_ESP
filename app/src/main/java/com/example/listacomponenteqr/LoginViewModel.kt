@@ -6,7 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.listacomponenteqr.common.Constants
+import com.example.listacomponenteqr.utils.Constants
 import com.example.listacomponenteqr.data.remote.ServiceApi
 import com.example.listacomponenteqr.utils.SharedPrefence
 import com.example.zitrocrm.screens.login.components.Error
